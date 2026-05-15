@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: ecommerce_db
+
+    ports:
+      - "5432:5432"
+
+  airflow:
+    image: apache/airflow:2.8.1
+    container_name: airflow
+
+    depends_on:
+      - postgres
+
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./raw_data:/opt/airflow/raw_data
+      - ./transformed:/opt/airflow/transformed
+      - ./requirements.txt:/requirements.txt
+
+    ports:
+      - "8080:8080"
+
+    command: >
+      bash -c "
+      pip install -r /requirements.txt &&
+      airflow db migrate &&
+      airflow users create
+      --username airflow
+      --password airflow
+      --firstname admin
+      --lastname admin
+      --role Admin
+      --email admin@example.com &&
+      airflow standalone
+      "
